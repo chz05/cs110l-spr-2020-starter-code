@@ -1,5 +1,4 @@
 use crate::open_file::OpenFile;
-#[allow(unused)] // TODO: delete this line for Milestone 3
 use std::fs;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -10,7 +9,6 @@ pub struct Process {
 }
 
 impl Process {
-    #[allow(unused)] // TODO: delete this line for Milestone 1
     pub fn new(pid: usize, ppid: usize, command: String) -> Process {
         Process { pid, ppid, command }
     }
@@ -23,7 +21,13 @@ impl Process {
     #[allow(unused)] // TODO: delete this line for Milestone 3
     pub fn list_fds(&self) -> Option<Vec<usize>> {
         // TODO: implement for Milestone 3
-        unimplemented!();
+        let fd_path = format!("/proc/{}/fd", self.pid);
+        let mut fds = Vec::<usize>::new();
+        for entry in fs::read_dir(&fd_path).ok()? {
+            let entry = entry.ok()?;
+            fds.push(entry.file_name().into_string().unwrap().parse().unwrap());
+        }
+        Some(fds)
     }
 
     /// This function returns a list of (fdnumber, OpenFile) tuples, if file descriptor
@@ -36,6 +40,17 @@ impl Process {
             open_files.push((fd, OpenFile::from_fd(self.pid, fd)?));
         }
         Some(open_files)
+    }
+
+    pub fn print(&self) {
+        println!("========== \"{}\" (pid {}, ppid {}) ==========", self.command, self.pid, self.ppid);
+        self.list_fds()
+            .map(|fds| {
+                println!("File Descriptors: {:?}", fds);
+            })
+            .unwrap_or_else(|| {
+                println!("File Descriptors: <unavailable>");
+            });
     }
 }
 
