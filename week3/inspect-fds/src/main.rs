@@ -23,6 +23,13 @@ fn main() {
     };
     println!("Found pid {}", proc.pid);
     proc.print();
+    ps_utils::get_child_processes(proc.pid)
+        .expect("Warning: could not inspect file descriptors for this process! It might have exited just as we were about to look at its fd table, or it might have exited a while ago and is waiting for the parent to reap it.")
+        .iter()
+        .for_each(|child_proc| {
+            println!();
+            child_proc.print();
+        });
 
 }
 

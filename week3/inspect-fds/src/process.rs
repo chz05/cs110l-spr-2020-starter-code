@@ -47,13 +47,25 @@ impl Process {
 
     pub fn print(&self) {
         println!("========== \"{}\" (pid {}, ppid {}) ==========", self.command, self.pid, self.ppid);
-        self.list_fds()
-            .map(|fds| {
-                println!("File Descriptors: {:?}", fds);
-            })
-            .unwrap_or_else(|| {
-                println!("File Descriptors: <unavailable>");
-            });
+        match self.list_open_files() {
+            None => println!(
+                "Warning: could not inspect file descriptors for this process! \
+                    It might have exited just as we were about to look at its fd table, \
+                    or it might have exited a while ago and is waiting for the parent \
+                    to reap it."
+            ),
+            Some(open_files) => {
+                for (fd, file) in open_files {
+                    println!(
+                        "{:<4} {:<15} cursor: {:<4} {}",
+                        fd,
+                        format!("({})", file.access_mode),
+                        file.cursor,
+                        file.colorized_name(),
+                    );
+                }
+            }
+        }
     }
 }
 

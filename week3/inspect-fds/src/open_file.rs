@@ -1,7 +1,6 @@
 use regex::Regex;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-#[allow(unused_imports)] // TODO: delete this line for Milestone 4
 use std::{fmt, fs};
 
 #[allow(unused)] // TODO: delete this line for Milestone 4
@@ -68,7 +67,6 @@ impl OpenFile {
     /// * For regular files, this will simply return the supplied path.
     /// * For terminals (files starting with /dev/pts), this will return "<terminal>".
     /// * For pipes (filenames formatted like pipe:[pipenum]), this will return "<pipe #pipenum>".
-    #[allow(unused)] // TODO: delete this line for Milestone 4
     fn path_to_name(path: &str) -> String {
         if path.starts_with("/dev/pts/") {
             String::from("<terminal>")
@@ -136,8 +134,14 @@ impl OpenFile {
     /// without making a big deal of it.)
     #[allow(unused)] // TODO: delete this line for Milestone 4
     pub fn from_fd(pid: usize, fd: usize) -> Option<OpenFile> {
-        // TODO: implement for Milestone 4
-        unimplemented!();
+        let dest_path_name = format!("/proc/{}/fd/{}", pid, fd);
+        let fd_link = fs::read_link(&dest_path_name).ok()?;
+        let name = OpenFile::path_to_name(&fd_link.to_str()?);
+        let fdinfo_path = format!("/proc/{}/fdinfo/{}", pid, fd);
+        let fdinfo_contents = fs::read_to_string(&fdinfo_path).ok()?;
+        let cursor = OpenFile::parse_cursor(&fdinfo_contents)?;
+        let access_mode = OpenFile::parse_access_mode(&fdinfo_contents)?;
+        Some(OpenFile::new(name, cursor, access_mode))
     }
 
     /// This function returns the OpenFile's name with ANSI escape codes included to colorize
