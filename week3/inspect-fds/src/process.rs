@@ -18,14 +18,17 @@ impl Process {
     /// information will commonly be unavailable if the process has exited. (Zombie processes
     /// still have a pid, but their resources have already been freed, including the file
     /// descriptor table.)
-    #[allow(unused)] // TODO: delete this line for Milestone 3
     pub fn list_fds(&self) -> Option<Vec<usize>> {
-        // TODO: implement for Milestone 3
         let fd_path = format!("/proc/{}/fd", self.pid);
         let mut fds = Vec::<usize>::new();
         for entry in fs::read_dir(&fd_path).ok()? {
             let entry = entry.ok()?;
-            fds.push(entry.file_name().into_string().unwrap().parse().unwrap());
+            let fd_str = entry.file_name().into_string().ok()?;
+            let fd_num = fd_str.parse::<usize>().ok()?;
+            fds.push(fd_num);
+        }
+        if fds.is_empty() {
+            return None;
         }
         Some(fds)
     }
